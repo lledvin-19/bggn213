@@ -1,0 +1,191 @@
+---
+title: "Class_06"
+author: "Leya Ledvin A15629760"
+format: typst
+editor: visual
+---
+
+## Background
+
+All functions in R have at least 3 things:
+
+- a *name* (we pick this and use it to call the function)
+- input *arguments* (one or more comma separated inputs)
+- the *body*(the lines of R code that do the work of the function)
+
+## A first function
+
+Let's write a function to add some numbers
+
+```{r}
+add <- function(x, y=0, z=0) {
+  x + y + z
+}
+```
+
+We can test it out
+
+```{r}
+add(1, 100)
+add(c(1, 2, 10), 100)
+add(100)
+```
+
+Function arguments can be *required* or *optional*. This just means they have a default fall back value that is used if the user does not supply one (like our `y` input above).
+
+What if I wanted to run our `add()` function in three inputs.
+
+```{r}
+add(1, 100, 1)
+```
+
+**Side-note**: R has the ability to take any number of inputs that you don't have to spell out like our `x`, `y` and `z` via `...` called "dots" or "elipses" input argument.
+
+We can explicitly output or **return** a value from a function with the special function `return()`. It is often a good idea to use this even though we might not need it.
+
+## A DNA sequence generator
+
+Write a function to generate random nucleotide sequences and the user can specify the length of the sequence you want.
+
+A useful function to get us started here is the base R `sample()` function.
+
+```{r}
+sample(x= c("A", "C", "T", "G"), size=40, replace = TRUE, prob = c(.30, .20, .30, .20))
+```
+
+This is our working "snippet" of code that does what we want so lets make it a function.
+
+```{r}
+generate_dna <- function(seqlength=25){
+  sample(x= c("A", "C", "T", "G"), size=seqlength, replace = TRUE, prob = c(.30, .20, .30, .20))
+}
+```
+
+```{r}
+generate_dna(30)
+```
+
+### Optional format switch
+
+At the minute our function returns sequences like this "A" "T" "A" "C" "T" "G" "T" "T" i.e. a multi element character vector with one nucleotide per element of the vector.
+
+We may want it to look like this ATACTGTT which will likely be more useful.
+
+A base R function that might help us here is `paste()`
+
+```{r}
+paste(c("A", "C", "T", "G"), collapse = "")
+```
+
+```{r}
+generate_dna <- function(seqlength=25){
+  n <- sample(x= c("A", "C", "T", "G"), size=seqlength, replace = TRUE, prob = c(.30, .20, .30, .20))
+  paste(n, collapse = "")
+}
+
+generate_dna(30)
+```
+
+We want to allow the user to pick the format, for this we can use a TRUE/FALSE kind of input argument...
+
+```{r}
+generate_dna <- function(seqlength=25, fasta = TRUE){
+  n <- sample(x= c("A", "C", "T", "G"), size=seqlength, replace = TRUE, prob = c(.30, .20, .30, .20))
+  cat("Hello...")
+ if(fasta) {
+   cat("...is it me you're looking for...")
+   n <- paste(n, collapse = "")
+ }
+  return(n)
+}
+generate_dna(30)
+```
+
+```{r}
+x <- generate_dna(30, fasta=TRUE)
+x
+```
+
+The `return()` function will explicitly print things.
+
+```{r}
+generate_dna <- function(seqlength=25, fasta = TRUE){
+  n <- sample(x= c("A", "C", "T", "G"), size=seqlength, replace = TRUE, prob = c(.30, .20, .30, .20))
+ if(fasta) {
+   n <- paste(n, collapse = "")
+ }
+  cat(n)
+}
+generate_dna(6, fasta=TRUE)
+```
+
+We want FASTA format like te rest of the world uses
+
+> len6 AGTCAT
+
+```{r}
+generate_dna <- function(seqlength=25, fasta = TRUE){
+  n <- sample(x= c("A", "C", "T", "G"), size=seqlength, replace = TRUE, prob = c(.30, .20, .30, .20))
+ if(fasta) {
+   id <- paste(">len", seqlength, sep="")
+   n <- paste(n, collapse = "")
+   cat(id,sep="\n", n)
+ }
+  return(n)
+}
+
+```
+
+```{r}
+x <- generate_dna(10)
+```
+
+## A Protein Generator
+
+> Q. Write a function called `generate_protein()` that makes random peptide sequences.
+
+```{r}
+generate_protein <- function(seqlength=15, fasta = TRUE){
+  
+  aa <- c("A", "R", "N", "D", "C", "Q", "E", "G", "H", "I", "L", "K", "M", "F", "P", "S", "T", "W", "Y", "V") 
+  n <- sample(aa, size=seqlength, replace = TRUE)
+  if(fasta) {
+    id <- paste(">len", seqlength, sep="")
+   n <- paste(n, collapse = "")
+   
+   cat(id,sep="\n", n)
+  }
+  return(n)
+}
+```
+
+```{r}
+p <- generate_protein(30)
+```
+
+> Q. Use our new `generate_protein()` function to make a series of random protein sequences ranging from 6 to 13 amino acids in length
+
+```{r}
+for (i in 6:13) {
+  x <- generate_protein(i)
+}
+```
+
+Another very R specific way to do this is with the `sapply()` function:
+
+```{r}
+fasta_list <- sapply(6:13, generate_protein)
+```
+
+> Q. Are these sequences unique in nature? To test this we will BLASTp all of them against the NR database.
+
+| Length | %Cov | %Iden | Unique |
+|--------|------|-------|--------|
+| 6      | 100  | 100   | No     |
+| 7      | 100  | 100   | No     |
+| 8      | 88   | 100   | Yes    |
+| 9      | 89   | 100   | Yes    |
+| 10     | 90   | 90    | Yes    |
+| 11     | 100  | 78.57 | Yes    |
+
+The connection to immunology is that the peptides that are normally presented on immune cells are 8-9 amino acids long and that is around the minimum length where sequences start to be unique. 

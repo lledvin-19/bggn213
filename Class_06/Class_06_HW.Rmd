@@ -1,0 +1,119 @@
+---
+title: "HW_Class6"
+author: "Leya Ledvin A15629760"
+date: "2026-10-17"
+output: pdf_document
+---
+
+### Section 1: Improving analysis code by writing functions
+
+```{r}
+# (A. Can you improve this analysis code?
+df <- data.frame(a=1:10, b=seq(200,400,length=10),c=11:20,d=NA)
+df$a <- (df$a - min(df$a)) / (max(df$a) - min(df$a))
+df$b <- (df$b - min(df$a)) / (max(df$b) - min(df$b))
+df$c <- (df$c - min(df$c)) / (max(df$c) - min(df$c))
+df$d <- (df$d - min(df$d)) / (max(df$a) - min(df$d))
+
+df
+```
+
+Making a function
+
+```{r}
+x <- 1:10
+(x-min(x))/(max(x)-min(x))
+rng <- range(x)
+(x-rng[1])/(rng[2]-rng[1])
+
+rescale <- function(x, na.rm = TRUE){
+  rng <- range(x, na.rm = na.rm)
+  answer <- (x-rng[1])/(rng[2]-rng[1])
+  return(answer)
+}
+```
+
+```{r}
+rescale(1:10)
+df$a <- rescale(df$a)
+```
+
+## Answering Q1 - Q6
+
+```{r}
+# Can you improve this analysis code?
+library(bio3d)
+s1 <- read.pdb("4AKE") # kinase with drug
+s2 <- read.pdb("1AKE") # kinase no drug
+s3 <- read.pdb("1E4Y") # kinase with drug
+
+s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+s2.chainA <- trim.pdb(s2, chain="A", elety="CA")
+s3.chainA <- trim.pdb(s3, chain="A", elety="CA")
+
+s1.b <- s1.chainA$atom$b
+s2.b <- s2.chainA$atom$b
+s3.b <- s3.chainA$atom$b
+
+plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+plotb3(s2.b, sse=s2.chainA, typ="l", ylab="Bfactor")
+plotb3(s3.b, sse=s3.chainA, typ="l", ylab="Bfactor")
+
+library(ggplot2)
+bdata <- data.frame(
+  residue = rep(1:length(s1.b), 3),
+  bfactor = c(s1.b, s2.b, s3.b),
+  protein = rep(c("4AKE", "1AKE", "1E4Y"), each = length(s1.b))
+)
+
+bplot <- ggplot(bdata) +
+  aes(residue, bfactor, col = protein) +
+  geom_line() +
+  labs(x = "Residue",
+       y = "B-factor",
+       title = "B-factor comparison of adenylate kinase structures")
+bplot
+```
+
+### Q1. The `read.pdb()` function returns a pdb object which is a list when I look at the file. I can see the atoms, xyz coordinates, the sequence and also where the helix starts and stops.
+
+### Q2. The `trim.pdb()` function makes a smaller version of the pdb object whith only the parts of the structure that we want and in this case selecgted for just chain A and only the alpha carbon atoms.
+
+### Q3. The sse argument is what generates the black and grey rectangles and if you take out this argument then you no longer see the rectangles. These boxes show the secondary strucutres of the protein with the black rectangles representing the alpha helices and the grey ones representing the beta sheets.
+
+### Q4. A better plot would be a geom_line() plot where the three different proteins are overalpping so you can see how similar their residues are.
+
+```{r}
+hc <- hclust( dist( rbind(s1.b, s2.b, s3.b) ) )
+plot(hc)
+```
+
+### Q5. Using `hclust()` I can see that 1AKE and 1E4Y cluster together while 4AKE stays separate therefore 1AKE and 1E4Y are more similar to each other. This is also seen in the previous overlay plot.
+
+## Q6. Generalizing the original code
+
+```{r}
+library(bio3d)
+
+#s1 <- read.pdb("4AKE") # kinase with drug
+#s1.chainA <- trim.pdb(s1, chain="A", elety="CA")
+#s1.b <- s1.chainA$atom$b
+#plotb3(s1.b, sse=s1.chainA, typ="l", ylab="Bfactor")
+
+
+plot_Bfactor <- function(pdb.id) {
+  pdb <- read.pdb(pdb.id)
+  pdb_trim <- trim.pdb(pdb, chain = "A", elety = "CA")
+  b <-  pdb_trim$atom$b
+  plotb3(b, sse = pdb_trim, typ = "l", ylab="Bfactor")
+  return(b)
+}
+
+plot_Bfactor("1E4Y")
+```
+
+**The input is the pdb.id such which is a 4-character PDB code such as 1E4Y.**
+
+**This code reads the protein structure from the database, keeps only chain A and then plots the B-factor for each residue. To use it, you must input a 4-character PDB code as I showed in the last line of the code above.**
+
+**The output of the function will be the B-factor plot with the secondary structure shown with the rectangles on the margins which shows where the alpha helices and beta sheets are. It also returns the B-factor values as a list of numbers.**

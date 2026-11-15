@@ -1,0 +1,167 @@
+---
+title: "Class_05: Data viz with ggplot"
+author: "Leya (A15629760)"
+format: pdf
+toc: true
+---
+
+## Background
+
+Today we are going to learn all about the **ggplot2** package in R.
+
+These are tones of graphics packages in R. These include "base R graphics" (like the \`plot()' function we used last day) and add on packages like **ggplot2**.
+
+### Comparing base graphics with ggplot
+
+We can use the in-built data frame `cars` to play with plotting: 
+
+```{r}
+cars
+```
+```{r}
+head(cars)
+```
+```{r}
+plot(cars)
+```
+Now with ggplot: 
+> I do not want to run `install.packages("ggplot")` in my quarto document as this will result in me re-installing the package every time I render my report. 
+
+```{r}
+library(ggplot2)
+ggplot(cars)
+```
+
+Every ggplot needs at least 3 things
+
+- the **data** (data.frame we want to plot from)
+- the **aesthetics** (how the columns of the input data map to the plot)
+- the **geom** (the way you want the plot drawn, like points, lines, columns)
+
+```{r, eval=FALSE}
+library(ggsci)
+theme_nature <- function(base_size = 7, base_family = "Arial") {
+  theme_classic(base_size = base_size, base_family = base_family) +
+    theme(
+      axis.line = element_line(linewidth = 0.25),
+      axis.ticks = element_line(linewidth = 0.25),
+      axis.text = element_text(color = "black"),
+      legend.key.size = unit(3, "mm"),
+      strip.background = element_blank()
+    )
+}
+ggplot(data=cars) +
+  aes(x=speed, y=dist) + 
+  geom_point() + 
+  geom_smooth(method= "lm", se=TRUE, color = "blue") + 
+  theme_nature() + 
+  labs(x="Speed (MPH)", 
+       y="Stopping Distance (ft)", 
+       title = "The Long Drive")
+```
+### Gene Expression Plot
+
+Read the data from online:
+
+```{r}
+url <- "https://bioboot.github.io/bimm143_S20/class-material/up_down_expression.txt"
+genes <- read.delim(url)
+head(genes)
+nrow(genes)
+ncol(genes)
+table(genes$State)
+library(viridis)
+GLP1plot <- ggplot(genes) + 
+  aes(Condition1, Condition2, col=State) +
+  geom_point() + 
+  scale_colour_manual( values=c("orange","purple","red") ) +
+  labs(x="Control (no drug)", 
+       y="Drug Treated",
+       title = "Gene expression changes upon drug treatment", 
+       subtitle = "GLP-1 inhibitor from Novo") 
+GLP1plot
+```
+
+!= is the not equals function
+```{r}
+sum(genes$State == "up")
+```
+
+> Q. What percentage of genes are "down" regulated? 
+
+```{r}
+down_genes <-  sum(genes$State == "down")
+total_genes <- sum(nrow(genes))
+down_genes/total_genes
+
+ans <- round(down_genes/total_genes * 100,4)
+ans
+```
+##I could've also done n.total <- nrow(genes)
+
+The percentage of down genes is `r ans` % 
+
+```{r}
+library(patchwork)
+
+# Setup some example plots 
+p1 <- ggplot(mtcars) + geom_point(aes(mpg, disp))
+p2 <- ggplot(mtcars) + geom_boxplot(aes(gear, disp, group = gear))
+p3 <- ggplot(mtcars) + geom_smooth(aes(disp, qsec))
+p4 <- ggplot(mtcars) + geom_bar(aes(carb))
+
+# Use patchwork to combine them here:
+(p1 | p2 ) /
+      (p3 | p4)
+```
+```{r}
+GLP1plot + 
+  facet_wrap(~State)
+```
+
+### The Gap Minder
+
+The gapminder dataset is rather famous and has lots of stuff to plot. 
+```{r}
+# File location online
+url <- "https://raw.githubusercontent.com/jennybc/gapminder/master/inst/extdata/gapminder.tsv"
+
+gapminder <- read.delim(url)
+
+head(gapminder)
+
+```
+
+> Q. How many data entires are there in this dataset?
+
+```{r}
+nrow(gapminder)
+```
+
+
+> Q. How many countries are in this dataset? 
+
+```{r}
+length(unique(gapminder$country))
+```
+
+```{r}
+ggplot(gapminder) +
+  aes(lifeExp, gdpPercap, col = continent) + 
+  geom_point() + 
+  geom_smooth() 
+  
+```
+Histograms of 
+
+```{r}
+ggplot(gapminder) + 
+  aes(lifeExp, fill= continent) + 
+  geom_histogram()
+```
+```{r}
+ggplot(gapminder) + 
+  aes(lifeExp, fill = continent) + 
+  geom_boxplot()
+```
+
